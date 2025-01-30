@@ -1,30 +1,35 @@
-import { useState, useEffect } from "react";
-import "./HackerNewsTop10.scss";
+import React, { useEffect, useState } from "react";
 
 const HackerNewsTop10 = () => {
-  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const url = `https://hacker-news.firebaseio.com/v0/topstories.json`;
-  console.log(data, "data");
+  const [data, setData] = useState([]);
+  console.log(data);
 
-  /* --------------------------- Fetch data handler --------------------------- */
+  /* -------------------------------- fetchData ------------------------------- */
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(url);
-        // console.log("blub")
+        const response = await fetch(
+          `https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty`
+        );
+
         if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
+          throw new Error(response.status);
         }
 
-        const parsedData = await response.json();
-        const slicedData = parsedData.slice(0, 10);
+        const res = await response.json();
+        const slicedArr = res.slice(0, 10);
 
-        const fetchedItemsArr = await Promise.all(slicedData.map(fetchItem));
+        let arr = [];
+        for (let i = 0; i < 10; i++) {
+          const item = await fetchItem(slicedArr[i]);
+          arr.push(item);
+        }
 
-        setData(fetchedItemsArr);
+        setData(arr);
       } catch (err) {
-        console.log(`Warning Error Error${err}`);
+        console.log(err);
       } finally {
         setLoading(false);
       }
@@ -33,28 +38,26 @@ const HackerNewsTop10 = () => {
     fetchData();
   }, []);
 
-  /* ------------------------- Fetch item data handler ------------------------ */
+  /* ------------------------------- fetch Item ------------------------------- */
 
   const fetchItem = async (id) => {
     try {
       const response = await fetch(
         `https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`
       );
-
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        throw new Error(response.status);
       }
 
-      return await response.json();
-    } catch (err) {
-      console.log(`Warning Error Error${err}`);
+      return response.json();
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  /* -------------------------------------------------------------------------- */
-
+  /* --------------------------------- Loading -------------------------------- */
   if (loading) {
-    return <p>I am loading</p>;
+    return <p>loading...</p>;
   }
 
   return (
@@ -62,10 +65,10 @@ const HackerNewsTop10 = () => {
       {data.map((datum) => {
         return (
           <div key={datum.title}>
-            <h1>Title: {datum.title}</h1>
-            <h2>By: {datum.by}</h2>
-            <h3>Score: {datum.score}</h3>
-            <h4>Url: {datum.url}</h4>
+            <h1>{datum.title}</h1>
+            <h1>{datum.by}</h1>
+            <h1>{datum.score}</h1>
+            <h1>{datum.url}</h1>
           </div>
         );
       })}
