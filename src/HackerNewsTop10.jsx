@@ -1,131 +1,74 @@
-// import React, { useState, useEffect } from "react";
-// import "./HackerNewsTop10.scss";
-
-// const HackerNewsTop10 = () => {
-//   const [loading, setLoading] = useState(true);
-//   const [data, setData] = useState([]);
-//   console.log(data, "data");
-
-//   /* --------------------------- Fetch Article Data --------------------------- */
-//   useEffect(() => {
-//     const fetchAPIIds = async () => {
-//       const url =
-//         "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty";
-
-//       try {
-//         const response = await fetch(url);
-//         if (!response.ok) {
-//           throw new Error(response.status);
-//         }
-//         const jsonedData = await response.json();
-//         // console.log(jsonedData, "jsonedData");
-
-//         for (let i = 0; i < 10; i++) {
-//           let id = jsonedData[i];
-//           const article = await fetch(
-//             `https://hacker-news.firebaseio.com/v0/item/${id}.json`
-//           );
-//           const jsonedArticle = await article.json();
-//           setData((prevData) => [...prevData, jsonedArticle]);
-//         }
-//       } catch (err) {
-//         console.log(err, "err");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchAPIIds();
-//   }, []);
-
-//   if (loading) {
-//     return <h1>I am loading, GIVE ME A BREAK!</h1>;
-//   }
-
-//   return (
-//     <div className="HackerNewsTop10">
-//       <div className="card">
-//         {data.map((datum) => {
-//           return (
-//             <>
-//               <h1>{datum.title}</h1>
-//               <h2>{datum.by}</h2>
-//               <h3>{datum.score}</h3>
-//               <p>{datum.url}</p>
-//             </>
-//           );
-//         })}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default HackerNewsTop10;
-
-/* ----------------------------- Better Solution ---------------------------- */
-
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./HackerNewsTop10.scss";
 
 const HackerNewsTop10 = () => {
-  const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const url = `https://hacker-news.firebaseio.com/v0/topstories.json`;
+  console.log(data, "data");
 
-  /* --------------------------- Fetch Article Data --------------------------- */
+  /* --------------------------- Fetch data handler --------------------------- */
   useEffect(() => {
-    const fetchAPIIds = async () => {
-      const url = "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty";
-
+    const fetchData = async () => {
       try {
         const response = await fetch(url);
+        // console.log("blub")
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Error: ${response.status}`);
         }
-        const jsonedData = await response.json();
 
-        // Fetch the top 10 articles in parallel
-        const top10Ids = jsonedData.slice(0, 10);
-        const articlePromises = top10Ids.map(id =>
-          fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
-        );
+        const parsedData = await response.json();
+        const slicedData = parsedData.slice(0, 10);
 
-        const articles = await Promise.all(articlePromises);
-        setData(articles);
+        const fetchedItemsArr = await Promise.all(slicedData.map(fetchItem));
+
+        setData(fetchedItemsArr);
       } catch (err) {
-        setError(err.message);
+        console.log(`Warning Error Error${err}`);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAPIIds();
+    fetchData();
   }, []);
 
-  if (loading) {
-    return <h1>Loading...</h1>;
-  }
+  /* ------------------------- Fetch item data handler ------------------------ */
 
-  if (error) {
-    return <h1>Error: {error}</h1>;
+  const fetchItem = async (id) => {
+    try {
+      const response = await fetch(
+        `https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.log(`Warning Error Error${err}`);
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+
+  if (loading) {
+    return <p>I am loading</p>;
   }
 
   return (
-    <div className="HackerNewsTop10">
-      <div className="card">
-        {data.map((datum) => (
-          <div key={datum.id}>
-            <h1>{datum.title}</h1>
+    <div className="container">
+      {data.map((datum) => {
+        return (
+          <div key={datum.title}>
+            <h1>Title: {datum.title}</h1>
             <h2>By: {datum.by}</h2>
             <h3>Score: {datum.score}</h3>
-            <p>
-              <a href={datum.url} target="_blank" rel="noopener noreferrer">
-                {datum.url}
-              </a>
-            </p>
+            <h4>Url: {datum.url}</h4>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 };
